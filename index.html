@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>慧食记 — 为糖友定制的食物助手</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',sans-serif;background:#f0f0f0;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px}
+.phone{width:375px;margin:0 auto;background:#f5f5f5;border-radius:40px;padding:16px;border:8px solid #222;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.screen{background:#fff;border-radius:24px;overflow:hidden;min-height:680px;display:flex;flex-direction:column;border:0.5px solid #e0e0e0}
+.status{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 0;font-size:12px;color:#999}
+.page{display:none;flex:1;flex-direction:column;overflow:hidden}
+.page.active{display:flex}
+.topbar{padding:12px 16px 8px;border-bottom:0.5px solid #f0f0f0}
+.topbar-title{font-size:16px;font-weight:600;color:#1a1a1a;text-align:center}
+.topbar-sub{font-size:12px;color:#999;text-align:center;margin-top:2px}
+.scroll-area{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+.scan-btn{width:96px;height:96px;border-radius:50%;background:#E8705A;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;margin:4px auto;transition:opacity 0.15s;-webkit-tap-highlight-color:transparent}
+.scan-btn:hover{opacity:0.88}
+.scan-btn svg{width:28px;height:28px}
+.scan-label{font-size:13px;color:#fff;font-weight:600}
+.search-row{display:flex;gap:8px;align-items:center}
+.search-row input{flex:1;font-size:14px;padding:8px 12px;border-radius:8px;border:0.5px solid #ddd;background:#f8f8f8;color:#1a1a1a;outline:none}
+.tip-card{background:#f8f8f8;border-radius:12px;padding:12px 14px;border:0.5px solid #ebebeb}
+.tip-title{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px}
+.tip-body{font-size:12px;color:#666;line-height:1.6}
+.section-label{font-size:13px;font-weight:600;color:#1a1a1a}
+.food-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.food-chip{background:#f8f8f8;border-radius:12px;padding:10px 12px;border:0.5px solid #ebebeb;cursor:pointer;transition:border-color 0.15s;-webkit-tap-highlight-color:transparent}
+.food-chip:hover{border-color:#E8705A}
+.food-chip-name{font-size:13px;color:#1a1a1a;font-weight:600;margin-bottom:4px}
+.gi-low{color:#27500A;background:#EAF3DE;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600}
+.gi-mid{color:#633806;background:#FAEEDA;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600}
+.gi-high{color:#791F1F;background:#FCEBEB;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600}
+.result-card{background:#fff;border-radius:12px;border:0.5px solid #e0e0e0;padding:14px 16px}
+.result-name{font-size:20px;font-weight:700;color:#1a1a1a;margin-bottom:2px}
+.result-category{font-size:12px;color:#999;margin-bottom:12px}
+.gi-meter-wrap{margin-bottom:14px}
+.gi-meter-label{display:flex;justify-content:space-between;font-size:11px;color:#999;margin-bottom:6px}
+.gi-meter-bar{height:10px;border-radius:5px;background:#f0f0f0;position:relative;overflow:hidden}
+.gi-meter-fill{height:100%;border-radius:5px;transition:width 0.6s}
+.gi-value-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.gi-number{font-size:36px;font-weight:700}
+.gi-badge-wrap{display:flex;flex-direction:column;gap:4px}
+.nutr-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.nutr-item{background:#f8f8f8;border-radius:8px;padding:8px 10px}
+.nutr-label{font-size:11px;color:#999;margin-bottom:2px}
+.nutr-val{font-size:14px;font-weight:600;color:#1a1a1a}
+.advice-block{border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6}
+.advice-safe{background:#EAF3DE;color:#27500A}
+.advice-caution{background:#FAEEDA;color:#633806}
+.advice-avoid{background:#FCEBEB;color:#791F1F}
+.combo-title{font-size:13px;font-weight:600;color:#1a1a1a;margin:12px 0 6px}
+.combo-list{display:flex;flex-direction:column;gap:6px}
+.combo-item{display:flex;align-items:center;gap:8px;font-size:13px;color:#666}
+.combo-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.back-btn{background:none;border:none;cursor:pointer;font-size:13px;color:#666;padding:0;display:flex;align-items:center;gap:4px;-webkit-tap-highlight-color:transparent}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 8px;border-bottom:0.5px solid #f0f0f0}
+.hist-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid #f0f0f0;cursor:pointer}
+.hist-item:last-child{border-bottom:none}
+.hist-left{display:flex;flex-direction:column;gap:2px}
+.hist-name{font-size:14px;color:#1a1a1a}
+.hist-time{font-size:12px;color:#999}
+.profile-section{background:#f8f8f8;border-radius:12px;padding:0 14px;border:0.5px solid #ebebeb}
+.profile-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid #f0f0f0}
+.profile-row:last-child{border-bottom:none}
+.profile-label{font-size:13px;color:#666}
+.profile-val{font-size:13px;color:#1a1a1a;font-weight:600}
+.profile-val.editable{color:#185FA5}
+.tabbar{display:flex;border-top:0.5px solid #f0f0f0;background:#fff}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0;cursor:pointer;gap:3px;border:none;background:none;-webkit-tap-highlight-color:transparent}
+.tab-label{font-size:11px;color:#999}
+.center-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 0 8px;gap:8px}
+.or-link{font-size:13px;color:#185FA5;text-align:center;cursor:pointer;text-decoration:underline}
+.foodlib-search{padding:8px 16px;border-bottom:0.5px solid #f0f0f0}
+.foodlib-search input{width:100%;font-size:14px;padding:8px 12px;border-radius:8px;border:0.5px solid #ddd;background:#f8f8f8;color:#1a1a1a;outline:none}
+.filter-row{display:flex;gap:6px;padding:8px 16px;overflow-x:auto;border-bottom:0.5px solid #f0f0f0}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{padding:5px 12px;border-radius:20px;border:0.5px solid #ddd;font-size:12px;cursor:pointer;white-space:nowrap;background:transparent;color:#666;-webkit-tap-highlight-color:transparent}
+.filter-chip.active{background:#E8705A;color:#fff;border-color:#E8705A}
+.foodlib-list{flex:1;overflow-y:auto;padding:0 16px;display:flex;flex-direction:column}
+.lib-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid #f0f0f0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lib-item:last-child{border-bottom:none}
+.lib-name{font-size:14px;color:#1a1a1a}
+.lib-cat{font-size:12px;color:#999;margin-top:2px}
+.lib-right{display:flex;align-items:center;gap:8px}
+.btn-primary{padding:11px;border-radius:8px;border:none;background:#E8705A;font-size:14px;cursor:pointer;color:#fff;font-weight:600;width:100%;-webkit-tap-highlight-color:transparent}
+.btn-secondary{padding:11px;border-radius:8px;border:0.5px solid #ddd;background:transparent;font-size:14px;cursor:pointer;color:#666;width:100%;-webkit-tap-highlight-color:transparent}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="screen">
+    <div class="status"><span>16:02</span><span>4G ▌▌</span></div>
+
+    <!-- 首页 -->
+    <div class="page active" id="pg-home">
+      <div class="topbar">
+        <div class="topbar-title">慧食记</div>
+        <div class="topbar-sub">为糖友定制的食物助手</div>
+      </div>
+      <div class="scroll-area">
+        <div class="center-wrap">
+          <button class="scan-btn" onclick="goPage('pg-scan')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="2"/></svg>
+            <span class="scan-label">拍照识食</span>
+          </button>
+          <span class="or-link" onclick="goPage('pg-lib')">或手动搜索食物名称</span>
+        </div>
+        <div class="tip-card">
+          <div class="tip-title">使用提示</div>
+          <div class="tip-body">拍照或搜索食物，即可获取升糖指数（GI）及食用建议，轻松掌握健康饮食。</div>
+        </div>
+        <div class="section-label">低GI推荐食物</div>
+        <div class="food-grid">
+          <div class="food-chip" onclick="goPage('pg-result-apple')">
+            <div class="food-chip-name">苹果</div>
+            <div><span class="gi-low">GI 36 · 低</span></div>
+          </div>
+          <div class="food-chip" onclick="goPage('pg-result-oat')">
+            <div class="food-chip-name">燕麦片</div>
+            <div><span class="gi-low">GI 55 · 低</span></div>
+          </div>
+          <div class="food-chip" onclick="goPage('pg-result-broc')">
+            <div class="food-chip-name">西兰花</div>
+            <div><span class="gi-low">GI 15 · 低</span></div>
+          </div>
+          <div class="food-chip" onclick="goPage('pg-lib')">
+            <div class="food-chip-name">更多食物</div>
+            <div style="font-size:12px;color:#999">查看全库 →</div>
+          </div>
+        </div>
+        <div class="section-label">今日已查</div>
+        <div style="background:#fff;border-radius:12px;padding:0 14px;border:0.5px solid #ebebeb">
+          <div class="hist-item" onclick="goPage('pg-result-rice')">
+            <div class="hist-left"><span class="hist-name">白米饭</span><span class="hist-time">今天 12:03</span></div>
+            <span class="gi-high">GI 83 · 高</span>
+          </div>
+          <div class="hist-item" onclick="goPage('pg-result-apple')">
+            <div class="hist-left"><span class="hist-name">苹果</span><span class="hist-time">今天 10:15</span></div>
+            <span class="gi-low">GI 36 · 低</span>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <button class="tab" onclick="goPage('pg-home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8705A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-label" style="color:#E8705A">首页</span></button>
+        <button class="tab" onclick="goPage('pg-lib')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="tab-label">食物库</span></button>
+        <button class="tab" onclick="goPage('pg-hist')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="tab-label">历史</span></button>
+        <button class="tab" onclick="goPage('pg-profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label">我的</span></button>
+      </div>
+    </div>
+
+    <!-- 拍照页 -->
+    <div class="page" id="pg-scan">
+      <div class="topbar-row">
+        <button class="back-btn" onclick="goPage('pg-home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+        <span style="font-size:15px;font-weight:600;color:#1a1a1a">拍照识食</span>
+        <span style="width:40px"></span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px">
+        <div style="width:220px;height:220px;border-radius:16px;background:#f8f8f8;border:2px dashed #ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/></svg>
+          <span style="font-size:13px;color:#bbb;text-align:center;line-height:1.5">对准食物<br>自动识别</span>
+        </div>
+        <div style="display:flex;gap:12px;width:100%">
+          <button class="btn-secondary" onclick="goPage('pg-home')">从相册选图</button>
+          <button class="btn-primary" onclick="goPage('pg-scanning')">开始识别</button>
+        </div>
+        <div class="tip-card" style="width:100%">
+          <div class="tip-title">拍摄技巧</div>
+          <div class="tip-body">光线充足、食物居中、尽量避免遮挡，识别准确率更高。</div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <button class="tab" onclick="goPage('pg-home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-label">首页</span></button>
+        <button class="tab" onclick="goPage('pg-lib')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="tab-label">食物库</span></button>
+        <button class="tab" onclick="goPage('pg-hist')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="tab-label">历史</span></button>
+        <button class="tab" onclick="goPage('pg-profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label">我的</span></button>
+      </div>
+    </div>
+
+    <!-- 识别中 -->
+    <div class="page" id="pg-scanning">
+      <div class="topbar-row">
+        <button class="back-btn" onclick="goPage('pg-scan')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+        <span style="font-size:15px;font-weight:600;color:#1a1a1a">识别中</span>
+        <span style="width:40px"></span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px">
+        <div style="width:180px;height:180px;border-radius:16px;background:#f8f8f8;border:0.5px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:64px">🍎</div>
+        <div style="text-align:center">
+          <div style="font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:4px">AI 正在识别...</div>
+          <div style="font-size:13px;color:#999">已识别：苹果（置信度 94%）</div>
+        </div>
+        <div style="width:100%;height:4px;background:#f0f0f0;border-radius:2px;overflow:hidden">
+          <div style="width:80%;height:100%;background:#E8705A;border-radius:2px"></div>
+        </div>
+        <button class="btn-primary" onclick="goPage('pg-result-apple')">查看结果</button>
+        <button class="btn-secondary" onclick="goPage('pg-scan')">重新拍摄</button>
+      </div>
+    </div>
+
+    <!-- 结果：苹果 -->
+    <div class="page" id="pg-result-apple">
+      <div class="topbar-row">
+        <button class="back-btn" onclick="history.back()||goPage('pg-home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+        <span style="font-size:15px;font-weight:600;color:#1a1a1a">食物详情</span>
+        <span style="width:40px"></span>
+      </div>
+      <div class="scroll-area">
+        <div class="result-card">
+          <div class="result-name">苹果</div>
+          <div class="result-category">水果类 · 每100g</div>
+          <div class="gi-value-row">
+            <span class="gi-number" style="color:#27500A">36</span>
+            <div class="gi-badge-wrap"><span class="gi-low">低GI食物</span><span style="font-size:11px;color:#999">升糖指数</span></div>
+          </div>
+          <div class="gi-meter-wrap">
+            <div class="gi-meter-label"><span>0</span><span>低GI &lt;55</span><span>中70</span><span>高100</span></div>
+            <div class="gi-meter-bar"><div class="gi-meter-fill" style="width:36%;background:#639922"></div></div>
+          </div>
+          <div class="nutr-grid">
+            <div class="nutr-item"><div class="nutr-label">热量</div><div class="nutr-val">52 kcal</div></div>
+            <div class="nutr-item"><div class="nutr-label">碳水</div><div class="nutr-val">13.8 g</div></div>
+            <div class="nutr-item"><div class="nutr-label">糖分</div><div class="nutr-val">10.4 g</div></div>
+            <div class="nutr-item"><div class="nutr-label">膳食纤维</div><div class="nutr-val">2.4 g</div></div>
+          </div>
+          <div class="advice-block advice-safe">适合食用。富含膳食纤维，有助于减缓血糖上升。建议单次不超过200g（约1个中等大小苹果）。</div>
+          <div class="combo-title">搭配建议</div>
+          <div class="combo-list">
+            <div class="combo-item"><div class="combo-dot" style="background:#639922"></div>搭配坚果，有助于减缓糖分吸收</div>
+            <div class="combo-item"><div class="combo-dot" style="background:#639922"></div>不建议榨汁，损失膳食纤维后GI升高</div>
+            <div class="combo-item"><div class="combo-dot" style="background:#639922"></div>餐后1小时后食用更佳</div>
+          </div>
+        </div>
+        <button class="btn-secondary" onclick="goPage('pg-home')">加入今日记录</button>
+      </div>
+      <div class="tabbar">
+        <button class="tab" onclick="goPage('pg-home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8705A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-label" style="color:#E8705A">首页</span></button>
+        <button class="tab" onclick="goPage('pg-lib')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="tab-label">食物库</span></button>
+        <button class="tab" onclick="goPage('pg-hist')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="tab-label">历史</span></button>
+        <button class="tab" onclick="goPage('pg-profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label">我的</span></button>
+      </div>
+    </div>
+
+    <!-- 结果：白米饭 -->
+    <div class="page" id="pg-result-rice">
+      <div class="topbar-row">
+        <button class="back-btn" onclick="goPage('pg-home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+        <span style="font-size:15px;font-weight:600;color:#1a1a1a">食物详情</span>
+        <span style="width:40px"></span>
+      </div>
+      <div class="scroll-area">
+        <div class="result-card">
+          <div class="result-name">白米饭</div>
+          <div class="result-category">主食类 · 每100g（熟）</div>
+          <div class="gi-value-row">
+            <span class="gi-number" style="color:#791F1F">83</span>
+            <div class="gi-badge-wrap"><span class="gi-high">高GI食物</span><span style="font-size:11px;color:#999">升糖指数</span></div>
+          </div>
+          <div class="gi-meter-wrap">
+            <div class="gi-meter-label"><span>0</span><span>低GI &lt;55</span><span>中70</span><span>高100</span></div>
+            <div class="gi-meter-bar"><div class="gi-meter-fill" style="width:83%;background:#E24B4A"></div></div>
+          </div>
+          <div class="nutr-grid">
+            <div class="nutr-item"><div class="nutr-label">热量</div><div class="nutr-val">116 kcal</div></div>
+            <div class="nutr-item"><div class="nutr-label">碳水</div><div class="nutr-val">25.6 g</div></div>
+            <div class="nutr-item"><div class="nutr-label">糖分</div><div class="nutr-val">0.1 g</div></div>
+            <div class="nutr-item"><div class="nutr-label">膳食纤维</div><div class="nutr-val">0.3 g</div></div>
+          </div>
+          <div class="advice-block advice-avoid">需控量食用。精制白米饭升糖迅速，建议每餐不超过150g，并搭配大量蔬菜和蛋白质减缓升糖。</div>
+          <div class="combo-title">改善建议</div>
+          <div class="combo-list">
+            <div class="combo-item"><div class="combo-dot" style="background:#E24B4A"></div>将1/3白米换成糙米或藜麦，GI可降至65左右</div>
+            <div class="combo-item"><div class="combo-dot" style="background:#E24B4A"></div>冷却后再食用，抗性淀粉增加，GI降低约10</div>
+            <div class="combo-item"><div class="combo-dot" style="background:#E24B4A"></div>先吃蔬菜和蛋白质，后吃主食，可显著减缓血糖峰值</div>
+          </div>
+        </div>
+        <button class="btn-secondary" onclick="goPage('pg-home')">加入今日记录</button>
+      </div>
+      <div class="tabbar">
+        <button class="tab" onclick="goPage('pg-home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8705A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-label" style="color:#E8705A">首页</span></button>
+        <button class="tab" onclick="goPage('pg-lib')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="tab-label">食物库</span></button>
+        <button class="tab" onclick="goPage('pg-hist')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="tab-label">历史</span></button>
+        <button class="tab" onclick="goPage('pg-profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label">我的</span></button>
+      </div>
+    </div>
+
+    <!-- 结果：燕麦 -->
+    <div class="page" id="pg-result-oat">
+      <div class="topbar-row"><button class="back-btn" onclick="goPage('pg-home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>返回</button><span style="font-size:15px;font-weight:600;color:#1a1a1a">食物详情</span><span style="width:40px"></span></div>
+      <div class="scroll-area">
+        <div class="result-card">
+          <div class="result-name">燕麦片</div>
+          <div class="result-category">谷物类 · 每100g（干）</div>
+          <div class="gi-value-row"><span class="gi-number" style="color:#27500A">55</span><div class="gi-badge-wrap"><span class="gi-low">低GI食物</span><span style="font-size:11px;color:#999">升糖指数</span></div></div>
+          <div class="gi-meter-wrap"><div class="gi-meter-label"><span>0</span><span>低GI &lt;55</span><span>中70</span><span>高100</span></div><div class="gi-meter-bar"><div class="gi-meter-fill" style="width:55%;background:#639922"></div></div></div>
+          <div class="nutr-grid">
+            <div class="nutr-item"><div class="nutr-label">热量</div><div class="nutr-val">389 kcal</div></div>
+            <div class="nutr-item"><div class="nutr-label">碳水</div><div class="nutr-val">66.3 g</div></div>
+            <div class="nutr-item"><div class="nutr-label">蛋白质</div><div class="nutr-val">16.9 g</div></div>
+            <div class="nutr-item"><div class="nutr-label">膳食纤维</div><div class="nutr-val">10.6 g</div></div>
+          </div>
+          <div class="advice-block advice-safe">适合作为早餐主食。β-葡聚糖含量高，可改善胰岛素敏感性。建议选纯燕麦片而非速溶调味款。</div>
+        </div>
+      </div>
+      <div class="tabbar"><button class="tab" onclick="goPage('pg-home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8705A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-label" style="color:#E8705A">首页</span></button><button class="tab" onclick="goPage('pg-lib')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="tab-label">食物库</span></button><button class="tab" onclick="goPage('pg-hist')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="tab-label">历史</span></button><button class="tab" onclick="goPage('pg-profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label">我的</span></button></div>
+    </div>
+
+    <!-- 结果：西兰花 -->
+    <div class="page" id="pg-result-broc">
+      <div class="topbar-row"><button class="back-btn" onclick="goPage('pg-home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>返回</button><span style="font-size:15px;font-weight:600;color:#1a1a1a">食物详情</span><span style="width:40px"></span></div>
+      <div class="scroll-area">
+        <div class="result-card">
+          <div class="result-name">西兰花</div>
+          <div class="result-category">蔬菜类 · 每100g</div>
+          <div class="gi-value-row"><span class="gi-number" style="color:#27500A">15</span><div class="gi-badge-wrap"><span class="gi-low">低GI食物</span><span style="font-size:11px;color:#999">升糖指数</span></div></div>
+          <div class="gi-meter-wrap"><div class="gi-meter-label"><span>0</span><span>低GI &lt;55</span><span>中70</span><span>高100</span></div><div class="gi-meter-bar"><div class="gi-meter-fill" style="width:15%;background:#639922"></div></div></div>
+          <div class="nutr-grid">
+            <div class="nutr-item"><div class="nutr-label">热量</div><div class="nutr-val">34 kcal</div></div>
+            <div class="nutr-item"><div class="nutr-label">碳水</div><div class="nutr-val">6.6 g</div></div>
+            <div class="nutr-item"><div class="nutr-label">蛋白质</div><div class="nutr-val">2.8 g</div></div>
+            <div class="nutr-item"><div class="nutr-label">维生素C</div><div class="nutr-val">89 mg</div></div>
+          </div>
+          <div class="advice-block advice-safe">强烈推荐。几乎不影响血糖，且含有丰富抗氧化物质，对预防糖尿病并发症有帮助。可大量食用。</div>
+        </div>
+      </div>
+      <div class="tabbar"><button class="tab" onclick="goPage('pg-home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8705A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-label" style="color:#E8705A">首页</span></button><button class="tab" onclick="goPage('pg-lib')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="tab-label">食物库</span></button><button class="tab" onclick="goPage('pg-hist')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="tab-label">历史</span></button><button class="tab" onclick="goPage('pg-profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label">我的</span></button></div>
+    </div>
+
+    <!-- 食物库 -->
+    <div class="page" id="pg-lib">
+      <div class="topbar"><div class="topbar-title">食物库</div></div>
+      <div class="foodlib-search"><input placeholder="搜索食物名称..." id="lib-search" oninput="filterLib(this.value)"></div>
+      <div class="filter-row">
+        <button class="filter-chip active" onclick="setFilter(this,'全部')">全部</button>
+        <button class="filter-chip" onclick="setFilter(this,'低GI')">低GI</button>
+        <button class="filter-chip" onclick="setFilter(this,'中GI')">中GI</button>
+        <button class="filter-chip" onclick="setFilter(this,'高GI')">高GI</button>
+        <button class="filter-chip" onclick="setFilter(this,'主食')">主食</button>
+        <button class="filter-chip" onclick="setFilter(this,'水果')">水果</button>
+        <button class="filter-chip" onclick="setFilter(this,'蔬菜')">蔬菜</button>
+      </div>
+      <div class="foodlib-list" id="lib-list"></div>
+      <div class="tabbar">
+        <button class="tab" onclick="goPage('pg-home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-label">首页</span></button>
+        <button class="tab" onclick="goPage('pg-lib')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8705A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="tab-label" style="color:#E8705A">食物库</span></button>
+        <button class="tab" onclick="goPage('pg-hist')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="tab-label">历史</span></button>
+        <button class="tab" onclick="goPage('pg-profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label">我的</span></button>
+      </div>
+    </div>
+
+    <!-- 历史 -->
+    <div class="page" id="pg-hist">
+      <div class="topbar"><div class="topbar-title">查询历史</div></div>
+      <div class="scroll-area">
+        <div class="section-label" style="margin-bottom:4px">今天</div>
+        <div style="background:#fff;border-radius:12px;padding:0 14px;border:0.5px solid #ebebeb">
+          <div class="hist-item" onclick="goPage('pg-result-rice')"><div class="hist-left"><span class="hist-name">白米饭</span><span class="hist-time">12:03 · 主食类</span></div><span class="gi-high">GI 83</span></div>
+          <div class="hist-item" onclick="goPage('pg-result-apple')"><div class="hist-left"><span class="hist-name">苹果</span><span class="hist-time">10:15 · 水果类</span></div><span class="gi-low">GI 36</span></div>
+          <div class="hist-item" onclick="goPage('pg-result-oat')"><div class="hist-left"><span class="hist-name">燕麦片</span><span class="hist-time">08:20 · 谷物类</span></div><span class="gi-low">GI 55</span></div>
+        </div>
+        <div class="section-label" style="margin-bottom:4px">昨天</div>
+        <div style="background:#fff;border-radius:12px;padding:0 14px;border:0.5px solid #ebebeb">
+          <div class="hist-item"><div class="hist-left"><span class="hist-name">面包</span><span class="hist-time">15:30 · 主食类</span></div><span class="gi-high">GI 75</span></div>
+          <div class="hist-item"><div class="hist-left"><span class="hist-name">西兰花</span><span class="hist-time">12:00 · 蔬菜类</span></div><span class="gi-low">GI 15</span></div>
+        </div>
+        <div style="background:#f8f8f8;border-radius:12px;padding:12px 14px;border:0.5px solid #ebebeb">
+          <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:8px">本周饮食总结</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+            <div class="nutr-item"><div class="nutr-label">查询次数</div><div class="nutr-val">12 次</div></div>
+            <div class="nutr-item"><div class="nutr-label">低GI占比</div><div class="nutr-val" style="color:#27500A">58%</div></div>
+            <div class="nutr-item"><div class="nutr-label">需注意</div><div class="nutr-val" style="color:#791F1F">3 种</div></div>
+            <div class="nutr-item"><div class="nutr-label">饮食得分</div><div class="nutr-val">72分</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <button class="tab" onclick="goPage('pg-home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-label">首页</span></button>
+        <button class="tab" onclick="goPage('pg-lib')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="tab-label">食物库</span></button>
+        <button class="tab" onclick="goPage('pg-hist')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8705A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="tab-label" style="color:#E8705A">历史</span></button>
+        <button class="tab" onclick="goPage('pg-profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label">我的</span></button>
+      </div>
+    </div>
+
+    <!-- 我的 -->
+    <div class="page" id="pg-profile">
+      <div class="topbar"><div class="topbar-title">我的</div></div>
+      <div class="scroll-area">
+        <div style="display:flex;align-items:center;gap:14px;padding:4px 0 8px">
+          <div style="width:52px;height:52px;border-radius:50%;background:#FAEEDA;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#633806;border:0.5px solid #ebebeb">糖</div>
+          <div><div style="font-size:16px;font-weight:600;color:#1a1a1a">糖友小王</div><div style="font-size:12px;color:#999;margin-top:2px">使用慧食记 · 已坚持28天</div></div>
+        </div>
+        <div class="section-label">健康档案</div>
+        <div class="profile-section">
+          <div class="profile-row"><span class="profile-label">糖尿病类型</span><span class="profile-val editable">2型糖尿病</span></div>
+          <div class="profile-row"><span class="profile-label">目标空腹血糖</span><span class="profile-val editable">4.4–7.0 mmol/L</span></div>
+          <div class="profile-row"><span class="profile-label">用药情况</span><span class="profile-val editable">二甲双胍</span></div>
+          <div class="profile-row"><span class="profile-label">过敏/忌口</span><span class="profile-val editable">无</span></div>
+        </div>
+        <div class="section-label">偏好设置</div>
+        <div class="profile-section">
+          <div class="profile-row"><span class="profile-label">GI警戒线</span><span class="profile-val editable">55（低GI标准）</span></div>
+          <div class="profile-row"><span class="profile-label">每日查询提醒</span><span class="profile-val editable">开启</span></div>
+          <div class="profile-row"><span class="profile-label">单位偏好</span><span class="profile-val editable">mmol/L</span></div>
+        </div>
+        <button class="btn-secondary">退出登录</button>
+      </div>
+      <div class="tabbar">
+        <button class="tab" onclick="goPage('pg-home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tab-label">首页</span></button>
+        <button class="tab" onclick="goPage('pg-lib')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="tab-label">食物库</span></button>
+        <button class="tab" onclick="goPage('pg-hist')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="tab-label">历史</span></button>
+        <button class="tab" onclick="goPage('pg-profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8705A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label" style="color:#E8705A">我的</span></button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const FOODS=[
+  {name:'苹果',cat:'水果',gi:36,level:'low',page:'pg-result-apple'},
+  {name:'白米饭',cat:'主食',gi:83,level:'high',page:'pg-result-rice'},
+  {name:'燕麦片',cat:'谷物',gi:55,level:'low',page:'pg-result-oat'},
+  {name:'西兰花',cat:'蔬菜',gi:15,level:'low',page:'pg-result-broc'},
+  {name:'白面包',cat:'主食',gi:75,level:'high',page:''},
+  {name:'糙米饭',cat:'主食',gi:68,level:'mid',page:''},
+  {name:'香蕉',cat:'水果',gi:52,level:'low',page:''},
+  {name:'西瓜',cat:'水果',gi:72,level:'high',page:''},
+  {name:'豆腐',cat:'蔬菜',gi:15,level:'low',page:''},
+  {name:'红薯',cat:'主食',gi:63,level:'mid',page:''},
+  {name:'玉米',cat:'主食',gi:55,level:'low',page:''},
+  {name:'全麦面包',cat:'主食',gi:45,level:'low',page:''},
+  {name:'土豆（蒸）',cat:'主食',gi:65,level:'mid',page:''},
+  {name:'樱桃',cat:'水果',gi:22,level:'low',page:''},
+  {name:'葡萄',cat:'水果',gi:46,level:'low',page:''},
+  {name:'胡萝卜',cat:'蔬菜',gi:39,level:'low',page:''},
+  {name:'南瓜（蒸）',cat:'蔬菜',gi:75,level:'high',page:''},
+  {name:'牛奶',cat:'其他',gi:27,level:'low',page:''},
+];
+let curFilter='全部',curSearch='';
+function giClass(l){return l==='low'?'gi-low':l==='mid'?'gi-mid':'gi-high'}
+function giText(l){return l==='low'?'低GI':l==='mid'?'中GI':'高GI'}
+function renderLib(){
+  const list=document.getElementById('lib-list');
+  const data=FOODS.filter(f=>{
+    const ms=!curSearch||f.name.includes(curSearch);
+    const mf=curFilter==='全部'||(curFilter==='低GI'&&f.level==='low')||(curFilter==='中GI'&&f.level==='mid')||(curFilter==='高GI'&&f.level==='high')||(curFilter==='主食'&&f.cat==='主食')||(curFilter==='水果'&&f.cat==='水果')||(curFilter==='蔬菜'&&f.cat==='蔬菜');
+    return ms&&mf;
+  });
+  list.innerHTML=data.map(f=>`<div class="lib-item" onclick="${f.page?`goPage('${f.page}')`:''}"><div><div class="lib-name">${f.name}</div><div class="lib-cat">${f.cat}类</div></div><div class="lib-right"><span class="${giClass(f.level)}">GI ${f.gi} · ${giText(f.level)}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>`).join('');
+}
+function filterLib(v){curSearch=v;renderLib()}
+function setFilter(el,f){curFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderLib()}
+function goPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const pg=document.getElementById(id);if(pg)pg.classList.add('active');if(id==='pg-lib')renderLib();}
+renderLib();
+</script>
+</body>
+</html>
